@@ -21,13 +21,14 @@ module top(
 	input rx_start,
 	input rx_ack,
 	input [15:0] tx_data,
+	input lsb_first,
+	input rising_edge,
 	input miso,
 	output [15:0] rx_data,
 	output reg tx_ready,
 	output reg rx_ready,
 	output reg rx_data_ready,
-	input lsb_first,
-	output reg sck,
+	output sck,
 	output reg mosi,
 	output reg ss_s,
 	output reg ss_s_1,
@@ -37,40 +38,49 @@ module top(
 	input sys_rst
 );
 
-reg rising_edge = 1'd1;
-reg [1:0] clk_counter = 2'd3;
-wire tr_strobe_high;
-wire tr_strobe_low;
+reg [3:0] clk_counter = 4'd9;
+reg tr_strobe_high = 1'd0;
+reg tr_strobe_low = 1'd0;
 reg [3:0] bitno = 4'd0;
 reg [1:0] ss_latch = 2'd0;
+reg lsb_first_latch = 1'd0;
+reg rising_edge_latch = 1'd0;
 reg [3:0] word_len_latch = 4'd0;
 reg operation_tx_latch = 1'd0;
 reg [15:0] rx_buffer = 16'd0;
 reg [15:0] tx_buffer = 16'd0;
-reg [1:0] state = 2'd0;
-reg [1:0] next_state;
-reg [15:0] tx_buffer_t_next_value0;
-reg tx_buffer_t_next_value_ce0;
-reg [1:0] ss_latch_t_next_value1;
-reg ss_latch_t_next_value_ce1;
-reg [3:0] word_len_latch_t_next_value2;
-reg word_len_latch_t_next_value_ce2;
-reg operation_tx_latch_t_next_value3;
-reg operation_tx_latch_t_next_value_ce3;
-reg tx_ready_t_next_value4;
-reg tx_ready_t_next_value_ce4;
-reg rx_ready_t_next_value5;
-reg rx_ready_t_next_value_ce5;
-reg rx_data_ready_f_next_value0;
-reg rx_data_ready_f_next_value_ce0;
-reg [15:0] rx_buffer_f_next_value1;
-reg rx_buffer_f_next_value_ce1;
+reg inner_sck = 1'd1;
+reg mask = 1'd1;
+reg [2:0] state = 3'd0;
+reg [2:0] next_state;
+reg [15:0] tx_buffer_next_value0;
+reg tx_buffer_next_value_ce0;
+reg [1:0] ss_latch_next_value1;
+reg ss_latch_next_value_ce1;
+reg [3:0] word_len_latch_next_value2;
+reg word_len_latch_next_value_ce2;
+reg operation_tx_latch_next_value3;
+reg operation_tx_latch_next_value_ce3;
+reg lsb_first_latch_next_value4;
+reg lsb_first_latch_next_value_ce4;
+reg rising_edge_latch_next_value5;
+reg rising_edge_latch_next_value_ce5;
+reg tx_ready_next_value6;
+reg tx_ready_next_value_ce6;
+reg rx_ready_next_value7;
+reg rx_ready_next_value_ce7;
 reg next_value;
 reg next_value_ce;
-reg mosi_t_next_value6;
-reg mosi_t_next_value_ce6;
-reg [3:0] bitno_t_next_value7;
-reg bitno_t_next_value_ce7;
+reg mask_f_next_value;
+reg mask_f_next_value_ce;
+reg mosi_t_next_value0;
+reg mosi_t_next_value_ce0;
+reg [3:0] bitno_next_value8;
+reg bitno_next_value_ce8;
+reg [15:0] rx_buffer_t_next_value1;
+reg rx_buffer_t_next_value_ce1;
+reg rx_data_ready_t_next_value2;
+reg rx_data_ready_t_next_value_ce2;
 reg array_muxed = 1'd0;
 
 
@@ -81,113 +91,147 @@ reg dummy_s;
 initial dummy_s <= 1'd0;
 // synthesis translate_on
 
-assign tr_strobe_high = (clk_counter == 1'd0);
-assign tr_strobe_low = (clk_counter == 2'd2);
+assign sck = (inner_sck | mask);
 assign rx_data = rx_buffer;
 
 // synthesis translate_off
 reg dummy_d;
 // synthesis translate_on
 always @(*) begin
-	next_state <= 2'd0;
-	tx_buffer_t_next_value0 <= 16'd0;
-	tx_buffer_t_next_value_ce0 <= 1'd0;
-	ss_latch_t_next_value1 <= 2'd0;
-	ss_latch_t_next_value_ce1 <= 1'd0;
-	word_len_latch_t_next_value2 <= 4'd0;
-	word_len_latch_t_next_value_ce2 <= 1'd0;
-	operation_tx_latch_t_next_value3 <= 1'd0;
-	operation_tx_latch_t_next_value_ce3 <= 1'd0;
-	tx_ready_t_next_value4 <= 1'd0;
-	tx_ready_t_next_value_ce4 <= 1'd0;
-	rx_ready_t_next_value5 <= 1'd0;
-	rx_ready_t_next_value_ce5 <= 1'd0;
-	rx_data_ready_f_next_value0 <= 1'd0;
-	rx_data_ready_f_next_value_ce0 <= 1'd0;
-	rx_buffer_f_next_value1 <= 16'd0;
-	rx_buffer_f_next_value_ce1 <= 1'd0;
+	next_state <= 3'd0;
+	tx_buffer_next_value0 <= 16'd0;
+	tx_buffer_next_value_ce0 <= 1'd0;
+	ss_latch_next_value1 <= 2'd0;
+	ss_latch_next_value_ce1 <= 1'd0;
+	word_len_latch_next_value2 <= 4'd0;
+	word_len_latch_next_value_ce2 <= 1'd0;
+	operation_tx_latch_next_value3 <= 1'd0;
+	operation_tx_latch_next_value_ce3 <= 1'd0;
+	lsb_first_latch_next_value4 <= 1'd0;
+	lsb_first_latch_next_value_ce4 <= 1'd0;
+	rising_edge_latch_next_value5 <= 1'd0;
+	rising_edge_latch_next_value_ce5 <= 1'd0;
+	tx_ready_next_value6 <= 1'd0;
+	tx_ready_next_value_ce6 <= 1'd0;
+	rx_ready_next_value7 <= 1'd0;
+	rx_ready_next_value_ce7 <= 1'd0;
 	next_value <= 1'd0;
 	next_value_ce <= 1'd0;
-	mosi_t_next_value6 <= 1'd0;
-	mosi_t_next_value_ce6 <= 1'd0;
-	bitno_t_next_value7 <= 4'd0;
-	bitno_t_next_value_ce7 <= 1'd0;
+	mask_f_next_value <= 1'd0;
+	mask_f_next_value_ce <= 1'd0;
+	mosi_t_next_value0 <= 1'd0;
+	mosi_t_next_value_ce0 <= 1'd0;
+	bitno_next_value8 <= 4'd0;
+	bitno_next_value_ce8 <= 1'd0;
+	rx_buffer_t_next_value1 <= 16'd0;
+	rx_buffer_t_next_value_ce1 <= 1'd0;
+	rx_data_ready_t_next_value2 <= 1'd0;
+	rx_data_ready_t_next_value_ce2 <= 1'd0;
 	next_state <= state;
 	case (state)
 		1'd1: begin
-			if (((rising_edge & tr_strobe_high) | ((~rising_edge) & tr_strobe_low))) begin
+			if (((rising_edge_latch & tr_strobe_high) | ((~rising_edge_latch) & tr_strobe_low))) begin
 				next_value <= 1'd0;
 				next_value_ce <= 1'd1;
-				if (lsb_first) begin
-					rx_buffer_f_next_value1 <= {miso, rx_buffer[15:1]};
-					rx_buffer_f_next_value_ce1 <= 1'd1;
-				end else begin
-					rx_buffer_f_next_value1 <= {rx_buffer[14:0], miso};
-					rx_buffer_f_next_value_ce1 <= 1'd1;
-				end
-				if (lsb_first) begin
-					mosi_t_next_value6 <= tx_buffer[0];
-					mosi_t_next_value_ce6 <= 1'd1;
-					tx_buffer_t_next_value0 <= {1'd0, tx_buffer[15:1]};
-					tx_buffer_t_next_value_ce0 <= 1'd1;
-				end else begin
-					mosi_t_next_value6 <= tx_buffer[15];
-					mosi_t_next_value_ce6 <= 1'd1;
-					tx_buffer_t_next_value0 <= {tx_buffer[14:0], 1'd0};
-					tx_buffer_t_next_value_ce0 <= 1'd1;
-				end
-				bitno_t_next_value7 <= (bitno + 1'd1);
-				bitno_t_next_value_ce7 <= 1'd1;
-				if ((bitno == word_len_latch)) begin
-					next_state <= 2'd2;
-					if ((~operation_tx_latch)) begin
-						rx_data_ready_f_next_value0 <= 1'd1;
-						rx_data_ready_f_next_value_ce0 <= 1'd1;
-					end
-				end
+				next_state <= 2'd2;
 			end
 		end
 		2'd2: begin
+			if (((rising_edge_latch & tr_strobe_high) | ((~rising_edge_latch) & tr_strobe_low))) begin
+				if (operation_tx_latch) begin
+					next_state <= 2'd3;
+				end else begin
+					mask_f_next_value <= 1'd0;
+					mask_f_next_value_ce <= 1'd1;
+					next_state <= 3'd4;
+				end
+			end
+		end
+		2'd3: begin
+			if (((rising_edge_latch & tr_strobe_high) | ((~rising_edge_latch) & tr_strobe_low))) begin
+				mask_f_next_value <= 1'd0;
+				mask_f_next_value_ce <= 1'd1;
+				if (lsb_first_latch) begin
+					mosi_t_next_value0 <= tx_buffer[0];
+					mosi_t_next_value_ce0 <= 1'd1;
+					tx_buffer_next_value0 <= {1'd0, tx_buffer[15:1]};
+					tx_buffer_next_value_ce0 <= 1'd1;
+				end else begin
+					mosi_t_next_value0 <= tx_buffer[15];
+					mosi_t_next_value_ce0 <= 1'd1;
+					tx_buffer_next_value0 <= {tx_buffer[14:0], 1'd0};
+					tx_buffer_next_value_ce0 <= 1'd1;
+				end
+				bitno_next_value8 <= (bitno + 1'd1);
+				bitno_next_value_ce8 <= 1'd1;
+				if ((bitno == word_len_latch)) begin
+					next_state <= 3'd5;
+				end
+			end
+		end
+		3'd4: begin
+			if (((rising_edge_latch & tr_strobe_high) | ((~rising_edge_latch) & tr_strobe_low))) begin
+				if (lsb_first_latch) begin
+					rx_buffer_t_next_value1 <= {miso, rx_buffer[15:1]};
+					rx_buffer_t_next_value_ce1 <= 1'd1;
+				end else begin
+					rx_buffer_t_next_value1 <= {rx_buffer[14:0], miso};
+					rx_buffer_t_next_value_ce1 <= 1'd1;
+				end
+				bitno_next_value8 <= (bitno + 1'd1);
+				bitno_next_value_ce8 <= 1'd1;
+				if ((bitno == word_len_latch)) begin
+					next_state <= 3'd6;
+					rx_data_ready_t_next_value2 <= 1'd1;
+					rx_data_ready_t_next_value_ce2 <= 1'd1;
+				end
+			end
+		end
+		3'd5: begin
+			if (((rising_edge_latch & tr_strobe_high) | ((~rising_edge_latch) & tr_strobe_low))) begin
+				next_state <= 3'd6;
+			end
+		end
+		3'd6: begin
 			next_value <= 1'd1;
 			next_value_ce <= 1'd1;
-			bitno_t_next_value7 <= 1'd0;
-			bitno_t_next_value_ce7 <= 1'd1;
-			if (operation_tx_latch) begin
+			bitno_next_value8 <= 1'd0;
+			bitno_next_value_ce8 <= 1'd1;
+			mask_f_next_value <= 1'd1;
+			mask_f_next_value_ce <= 1'd1;
+			if ((operation_tx_latch | rx_ack)) begin
+				tx_ready_next_value6 <= 1'd1;
+				tx_ready_next_value_ce6 <= 1'd1;
+				rx_ready_next_value7 <= 1'd1;
+				rx_ready_next_value_ce7 <= 1'd1;
+				rx_data_ready_t_next_value2 <= 1'd0;
+				rx_data_ready_t_next_value_ce2 <= 1'd1;
+				rx_buffer_t_next_value1 <= 1'd0;
+				rx_buffer_t_next_value_ce1 <= 1'd1;
+				tx_buffer_next_value0 <= 1'd0;
+				tx_buffer_next_value_ce0 <= 1'd1;
 				next_state <= 1'd0;
-			end else begin
-				if (rx_ack) begin
-					next_state <= 1'd0;
-					rx_data_ready_f_next_value0 <= 1'd0;
-					rx_data_ready_f_next_value_ce0 <= 1'd1;
-				end
 			end
 		end
 		default: begin
 			if ((tx_start | rx_start)) begin
-				tx_buffer_t_next_value0 <= tx_data;
-				tx_buffer_t_next_value_ce0 <= 1'd1;
-				ss_latch_t_next_value1 <= ss_select;
-				ss_latch_t_next_value_ce1 <= 1'd1;
-				word_len_latch_t_next_value2 <= word_length;
-				word_len_latch_t_next_value_ce2 <= 1'd1;
-				operation_tx_latch_t_next_value3 <= tx_start;
-				operation_tx_latch_t_next_value_ce3 <= 1'd1;
-				tx_ready_t_next_value4 <= 1'd0;
-				tx_ready_t_next_value_ce4 <= 1'd1;
-				rx_ready_t_next_value5 <= 1'd0;
-				rx_ready_t_next_value_ce5 <= 1'd1;
+				tx_buffer_next_value0 <= tx_data;
+				tx_buffer_next_value_ce0 <= 1'd1;
+				ss_latch_next_value1 <= ss_select;
+				ss_latch_next_value_ce1 <= 1'd1;
+				word_len_latch_next_value2 <= word_length;
+				word_len_latch_next_value_ce2 <= 1'd1;
+				operation_tx_latch_next_value3 <= tx_start;
+				operation_tx_latch_next_value_ce3 <= 1'd1;
+				lsb_first_latch_next_value4 <= lsb_first;
+				lsb_first_latch_next_value_ce4 <= 1'd1;
+				rising_edge_latch_next_value5 <= rising_edge;
+				rising_edge_latch_next_value_ce5 <= 1'd1;
+				tx_ready_next_value6 <= 1'd0;
+				tx_ready_next_value_ce6 <= 1'd1;
+				rx_ready_next_value7 <= 1'd0;
+				rx_ready_next_value_ce7 <= 1'd1;
 				next_state <= 1'd1;
-			end else begin
-				tx_ready_t_next_value4 <= 1'd1;
-				tx_ready_t_next_value_ce4 <= 1'd1;
-				rx_ready_t_next_value5 <= 1'd1;
-				rx_ready_t_next_value_ce5 <= 1'd1;
-				rx_data_ready_f_next_value0 <= 1'd0;
-				rx_data_ready_f_next_value_ce0 <= 1'd1;
-				rx_buffer_f_next_value1 <= 1'd0;
-				rx_buffer_f_next_value_ce1 <= 1'd1;
-				tx_buffer_t_next_value0 <= 1'd0;
-				tx_buffer_t_next_value_ce0 <= 1'd1;
 			end
 		end
 	endcase
@@ -197,38 +241,40 @@ always @(*) begin
 end
 
 always @(posedge sys_clk) begin
+	tr_strobe_high <= (clk_counter == 1'd1);
+	tr_strobe_low <= (clk_counter == 3'd6);
 	if ((clk_counter == 1'd0)) begin
-		clk_counter <= 2'd3;
+		clk_counter <= 4'd9;
 	end else begin
 		clk_counter <= (clk_counter - 1'd1);
 	end
-	if (((clk_counter == 1'd0) | (clk_counter == 2'd2))) begin
-		sck <= (~sck);
+	if (((clk_counter == 1'd1) | (clk_counter == 3'd6))) begin
+		inner_sck <= (~inner_sck);
 	end
 	state <= next_state;
-	if (tx_buffer_t_next_value_ce0) begin
-		tx_buffer <= tx_buffer_t_next_value0;
+	if (tx_buffer_next_value_ce0) begin
+		tx_buffer <= tx_buffer_next_value0;
 	end
-	if (ss_latch_t_next_value_ce1) begin
-		ss_latch <= ss_latch_t_next_value1;
+	if (ss_latch_next_value_ce1) begin
+		ss_latch <= ss_latch_next_value1;
 	end
-	if (word_len_latch_t_next_value_ce2) begin
-		word_len_latch <= word_len_latch_t_next_value2;
+	if (word_len_latch_next_value_ce2) begin
+		word_len_latch <= word_len_latch_next_value2;
 	end
-	if (operation_tx_latch_t_next_value_ce3) begin
-		operation_tx_latch <= operation_tx_latch_t_next_value3;
+	if (operation_tx_latch_next_value_ce3) begin
+		operation_tx_latch <= operation_tx_latch_next_value3;
 	end
-	if (tx_ready_t_next_value_ce4) begin
-		tx_ready <= tx_ready_t_next_value4;
+	if (lsb_first_latch_next_value_ce4) begin
+		lsb_first_latch <= lsb_first_latch_next_value4;
 	end
-	if (rx_ready_t_next_value_ce5) begin
-		rx_ready <= rx_ready_t_next_value5;
+	if (rising_edge_latch_next_value_ce5) begin
+		rising_edge_latch <= rising_edge_latch_next_value5;
 	end
-	if (rx_data_ready_f_next_value_ce0) begin
-		rx_data_ready <= rx_data_ready_f_next_value0;
+	if (tx_ready_next_value_ce6) begin
+		tx_ready <= tx_ready_next_value6;
 	end
-	if (rx_buffer_f_next_value_ce1) begin
-		rx_buffer <= rx_buffer_f_next_value1;
+	if (rx_ready_next_value_ce7) begin
+		rx_ready <= rx_ready_next_value7;
 	end
 	if (next_value_ce) begin
 		array_muxed = next_value;
@@ -247,33 +293,45 @@ always @(posedge sys_clk) begin
 			end
 		endcase
 	end
-	if (mosi_t_next_value_ce6) begin
-		mosi <= mosi_t_next_value6;
+	if (mask_f_next_value_ce) begin
+		mask <= mask_f_next_value;
 	end
-	if (bitno_t_next_value_ce7) begin
-		bitno <= bitno_t_next_value7;
+	if (mosi_t_next_value_ce0) begin
+		mosi <= mosi_t_next_value0;
+	end
+	if (bitno_next_value_ce8) begin
+		bitno <= bitno_next_value8;
+	end
+	if (rx_buffer_t_next_value_ce1) begin
+		rx_buffer <= rx_buffer_t_next_value1;
+	end
+	if (rx_data_ready_t_next_value_ce2) begin
+		rx_data_ready <= rx_data_ready_t_next_value2;
 	end
 	if (sys_rst) begin
 		tx_ready <= 1'd1;
 		rx_ready <= 1'd1;
 		rx_data_ready <= 1'd0;
-		sck <= 1'd1;
 		mosi <= 1'd0;
 		ss_s <= 1'd1;
 		ss_s_1 <= 1'd1;
 		ss_s_2 <= 1'd1;
 		ss_s_3 <= 1'd1;
-		clk_counter <= 2'd3;
+		clk_counter <= 4'd9;
+		tr_strobe_high <= 1'd0;
+		tr_strobe_low <= 1'd0;
 		bitno <= 4'd0;
 		ss_latch <= 2'd0;
+		lsb_first_latch <= 1'd0;
+		rising_edge_latch <= 1'd0;
 		word_len_latch <= 4'd0;
 		operation_tx_latch <= 1'd0;
 		rx_buffer <= 16'd0;
 		tx_buffer <= 16'd0;
-		state <= 2'd0;
+		inner_sck <= 1'd1;
+		mask <= 1'd1;
+		state <= 3'd0;
 	end
 end
 
 endmodule
-
-

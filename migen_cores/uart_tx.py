@@ -52,7 +52,7 @@ class UART_TX(Module):
 		self.tx_latch = tx_latch = Signal(8)
 
 		# handle tx_counter & tx_strobe
-		self.comb += tx_strobe.eq(tx_counter == 0)
+		self.sync += tx_strobe.eq(tx_counter == 1)
 		self.sync += \
 			If(tx_counter == 0,
 				tx_counter.eq(divisor - 1)
@@ -68,9 +68,6 @@ class UART_TX(Module):
 				NextValue(tx_ready, 0),
 				NextValue(tx_latch, self.tx_data),
 				NextState("START"),
-			).Else(
-				NextValue(tx_port, 1),
-				NextValue(tx_ready, 1),
 			)
 		)
 		self.tx_fsm.act("START",

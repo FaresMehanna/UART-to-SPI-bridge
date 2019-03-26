@@ -51,7 +51,7 @@ class UART_RX(Module):
 			{rx_data, rx_ready}
 
 		# handle rx_strobe, rx_counter.
-		self.comb += rx_strobe.eq(rx_counter == 0)
+		self.sync += rx_strobe.eq(rx_counter == 1)
 		self.sync += \
 			If(rx_counter == 0,
 				rx_counter.eq(divisor - 1)
@@ -65,8 +65,6 @@ class UART_RX(Module):
 			If(~rx_port,
 				NextValue(rx_counter, divisor // 2),
 				NextState("START")
-			).Else(
-				NextValue(rx_ready, 0),
 			)
 		)
 		self.rx_fsm.act("START",

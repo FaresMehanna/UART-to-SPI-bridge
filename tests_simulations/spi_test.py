@@ -3,12 +3,12 @@ from spi import SPI
 import random
 
 def spi_tx(dut):
-	yield dut.lsb_first.eq(0)
+	yield dut.lsb_first.eq(1)
 	for i in range(13):
 		yield
 
-	# 0b1011001011111100
-	yield dut.tx_data.eq(0xb2Fc)
+	# 0b1011001011111101
+	yield dut.tx_data.eq(0xb2Fd)
 	# 16 bit word
 	yield dut.word_length.eq(15)
 	yield dut.ss_select.eq(1)
@@ -21,7 +21,7 @@ def spi_tx(dut):
 	yield dut.ss_select.eq(0)
 	yield dut.tx_start.eq(0)
 
-	for i in range(200):
+	for i in range(800):
 		yield
 
 def spi_rx(dut):
@@ -65,7 +65,7 @@ def spi_rx(dut):
 
 
 if __name__ == "__main__":
-	dut1 = SPI(clk_freq=100, operating_freq=25)
+	dut1 = SPI(clk_freq=100, operating_freq=10)
 	run_simulation(dut1, spi_tx(dut1), vcd_name="spi_tx.vcd")
-	dut2 = SPI(clk_freq=100, operating_freq=25)
+	dut2 = SPI(clk_freq=100, operating_freq=10)
 	run_simulation(dut2, spi_rx(dut2), vcd_name="spi_rx.vcd")
