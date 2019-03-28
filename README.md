@@ -24,7 +24,7 @@ Then you start either a receiving or transmitting transaction specifying the wan
 
 | OP Code | Function | Valid Values |
 | ---- | ---- | ---- |
-| 0b000 | word length | 0 -> 63 |
+| 0b000 | word length | 0 -> 15 representing values of 1 -> 16 |
 | 0b001 | slave select | 0 -> 3 |
 | 0b010 | lsb first = 1 | 0 -> 1 |
 | 0b011 | rising edge =1 | 0 -> 1 |
