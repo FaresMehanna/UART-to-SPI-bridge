@@ -25,31 +25,34 @@ architecture Behavioral of uart_to_spi_rx_tb is
     constant c_UART_CLOK_PERIOD : time := 1 sec / 9600;     -- baud rate
     constant c_SPI_CLOK_PERIOD : time := 1 sec / 10000000;  -- SPI clk rate
     
-    signal  r_clk       : std_logic :=  '0';
-    signal  r_reset     : std_logic :=  '0';
-    signal  r_tx_port   : std_logic;
-    signal  r_rx_port   : std_logic :=  '1';
-    signal  r_sck  : std_logic;
-    signal  r_miso  : std_logic;
-    signal  r_mosi  : std_logic;
-    signal  r_ss_1  : std_logic;
-    signal  r_ss_2  : std_logic;
-    signal  r_ss_3  : std_logic;
-    signal  r_ss_4  : std_logic;
+    signal r_clk : std_logic := '0';
+    signal r_reset : std_logic := '0';
+    signal r_tx_port : std_logic;
+    signal r_rx_port : std_logic := '1';
+    signal r_sck : std_logic;
+    signal r_miso : std_logic;
+    signal r_mosi : std_logic;
+    signal r_ss_1 : std_logic;
+    signal r_ss_2 : std_logic;
+    signal r_ss_3 : std_logic;
+    signal r_ss_4 : std_logic;
     
     component uart_to_spi is
         port (
-           clk      : in    std_logic;
-           reset    : in    std_logic;
-           rx_port  : in    std_logic;
-           tx_port  : out   std_logic;
-           sck      : out   std_logic;
-           miso     : in    std_logic;
-           mosi     : out   std_logic;
-           ss_1     : out   std_logic;
-           ss_2     : out   std_logic;
-           ss_3     : out   std_logic;
-           ss_4     : out   std_logic
+           clk   : in std_logic;
+           reset : in std_logic;
+           --
+           rx_port : in std_logic;
+           tx_port : out std_logic;
+           --
+           sck  : out std_logic;
+           miso : in std_logic;
+           mosi : out std_logic;
+           --
+           ss_1 : out std_logic;
+           ss_2 : out std_logic;
+           ss_3 : out std_logic;
+           ss_4 : out std_logic
         );
     end component uart_to_spi;
     
@@ -58,22 +61,22 @@ begin
 
     UUT : uart_to_spi
     port map (
-        clk             =>          r_clk,
-        reset           =>          r_reset,
-        tx_port         =>          r_tx_port,
-        rx_port         =>          r_rx_port,
-        sck             =>          r_sck,
-        miso            =>          r_miso,
-        mosi            =>          r_mosi,
-        ss_1            =>          r_ss_1,
-        ss_2            =>          r_ss_2,
-        ss_3            =>          r_ss_3,
-        ss_4            =>          r_ss_4
+        clk => r_clk,
+        reset => r_reset,
+        tx_port => r_tx_port,
+        rx_port => r_rx_port,
+        sck => r_sck,
+        miso => r_miso,
+        mosi => r_mosi,
+        ss_1 => r_ss_1,
+        ss_2 => r_ss_2,
+        ss_3 => r_ss_3,
+        ss_4 => r_ss_4
     );
 
     p_clk_generation : process is
     begin
-        wait for c_CLOK_PERIOD/2;
+        wait for c_CLOK_PERIOD / 2;
             r_clk <= not r_clk;
     end process;
 
@@ -186,8 +189,6 @@ begin
         r_miso <= '1';
 
         wait for 100 ms;
-
         
     end process;
-    
 end Behavioral;

@@ -18,28 +18,30 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity uart_tx is
     port (
-        clk         :   in      std_logic;
-        reset       :   in      std_logic;
-        tx_data     :   in      std_logic_vector(7 downto 0);
-        tx_ack      :   in      std_logic;
-        tx_port     :   out     std_logic := '1';
-        tx_ready    :   out     std_logic := '1'
+        clk   : in std_logic;
+        reset : in std_logic;
+        --
+        tx_data : in std_logic_vector (7 downto 0);
+        tx_ack  : in std_logic;
+        --
+        tx_port  : out std_logic := '1';
+        tx_ready : out std_logic := '1'
     );
 end uart_tx;
 
 architecture RTL of uart_tx is
     -- constants for frequency and baud rate conversion
-    constant input_HZ   :   natural := 100000000;
-    constant baud_rate  :   natural := 9600;
-    constant freq       :   natural := input_HZ/baud_rate;
+    constant input_HZ : natural := 100000000;
+    constant baud_rate : natural := 9600;
+    constant freq : natural := input_HZ / baud_rate;
     
     -- counter needed for baud_rate
-    signal tx_counter   :   natural range 0 to freq   := freq-1;
-    signal tx_strobe    :   std_logic                 := '0';
-    signal tx_bitno     :   natural range 0 to 8      := 0;
+    signal tx_counter : natural range 0 to freq := freq - 1;
+    signal tx_strobe : std_logic := '0';
+    signal tx_bitno : natural range 0 to 8 := 0;
     
     -- to latch the input
-    signal tx_latch     :   std_logic_vector(7 downto 0);
+    signal tx_latch : std_logic_vector (7 downto 0);
     
     -- fsm for tx opertation
     TYPE fsm_state IS (IDLE, START, DATA, STOP);
@@ -48,19 +50,15 @@ architecture RTL of uart_tx is
 begin
 
     rx_fsm : process(clk) is
-    begin
-                
+    begin 
         -- handle normal operation
         if rising_edge(clk) then
-            
             If (reset = '1') then
                 state <= IDLE;
                 tx_bitno <= 0;
-                
             else
                 -- handle tx fsm
                 case state is
-                    
                     when IDLE => 
                         If (tx_ack = '1') then
                             tx_ready <= '0';
@@ -90,7 +88,6 @@ begin
                             tx_ready <= '1';
                             state <= IDLE;
                         end if;
-                             
                 end case;
             end if;
         end if;
@@ -98,13 +95,10 @@ begin
 
     counters : process(clk) is
     begin
-        -- handle normal operation
         if rising_edge(clk) then
-
             If (reset = '1') then
                 tx_counter <= freq-1;
                 tx_strobe <= '0';
-
             else
                 --handle counter
                 if(state = IDLE and tx_ack = '1') then
@@ -116,7 +110,6 @@ begin
                         tx_counter <= tx_counter - 1;
                     end if;
                 end if;
-                
                 -- handle rx_strobe
                 if (tx_counter = 1) then
                     tx_strobe <= '1';

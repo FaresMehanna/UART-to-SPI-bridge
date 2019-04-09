@@ -24,21 +24,23 @@ architecture Behavioral of uart_rx_tb is
     constant c_CLOK_PERIOD : time := 1 sec / 100000000;     -- 100 MHZ
     constant c_UART_CLOK_PERIOD : time := 1 sec / 9600;     -- baud rate
     
-    signal  r_clk       : std_logic :=  '0';
-    signal  r_reset     : std_logic :=  '0';
-    signal  r_rx_port   : std_logic :=  '1';
-    signal  r_rx_ack    : std_logic :=  '0';
-    signal  r_rx_data   : std_logic_vector(7 downto 0);
-    signal  r_rx_ready  : std_logic;
+    signal r_clk : std_logic := '0';
+    signal r_reset : std_logic := '0';
+    signal r_rx_port : std_logic := '1';
+    signal r_rx_ack : std_logic := '0';
+    signal r_rx_data : std_logic_vector (7 downto 0);
+    signal r_rx_ready : std_logic;
     
     component uart_rx is
-        port (
-            clk         :   in      std_logic;
-            reset       :   in      std_logic;
-            rx_port     :   in      std_logic;
-            rx_ack      :   in      std_logic;
-            rx_data     :   out     std_logic_vector(7 downto 0);
-            rx_ready    :   out     std_logic := '0'
+        Port (
+            clk   : in std_logic;
+            reset : in std_logic;
+            --
+            rx_port : in std_logic;
+            rx_ack  : in std_logic;
+            --
+            rx_data  : out std_logic_vector (7 downto 0);
+            rx_ready : out std_logic := '0'
         );
     end component uart_rx;
     
@@ -46,17 +48,17 @@ begin
 
     UUT : uart_rx
     port map (
-        clk             =>          r_clk,
-        reset           =>          r_reset,
-        rx_port         =>          r_rx_port,
-        rx_ack          =>          r_rx_ack,
-        rx_data         =>          r_rx_data,
-        rx_ready        =>          r_rx_ready
+        clk => r_clk,
+        reset => r_reset,
+        rx_port => r_rx_port,
+        rx_ack => r_rx_ack,
+        rx_data => r_rx_data,
+        rx_ready => r_rx_ready
     );
 
     p_clk_generation : process is
     begin
-        wait for c_CLOK_PERIOD/2;
+        wait for c_CLOK_PERIOD / 2;
             r_clk <= not r_clk;
     end process;
 
@@ -99,9 +101,6 @@ begin
         wait for c_CLOK_PERIOD;
         r_rx_ack <= '0';
         wait for c_CLOK_PERIOD;        
-        
-        wait for 1 sec;
-        
+                
     end process;
-    
 end Behavioral;

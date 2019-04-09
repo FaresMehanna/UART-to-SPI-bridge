@@ -18,12 +18,14 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity uart_rx is
     port (
-        clk         :   in      std_logic;
-        reset       :   in      std_logic;
-        rx_port     :   in      std_logic;
-        rx_ack      :   in      std_logic;
-        rx_data     :   out     std_logic_vector(7 downto 0);
-        rx_ready    :   out     std_logic := '0'
+        clk   : in std_logic;
+        reset : in std_logic;
+        --
+        rx_port : in std_logic;
+        rx_ack  : in std_logic;
+        --
+        rx_data  : out std_logic_vector (7 downto 0);
+        rx_ready : out std_logic := '0'
     );
 end uart_rx;
 
@@ -31,12 +33,12 @@ architecture RTL of uart_rx is
     -- constants for frequency and baud rate conversion
     constant input_HZ : natural := 100000000;
     constant baud_rate : natural := 9600;
-    constant freq : natural := input_HZ/baud_rate;
+    constant freq : natural := input_HZ / baud_rate;
     
     -- counter needed for baud_rate
-    signal rx_counter   : natural range 0 to freq     := freq-1;
-    signal rx_strobe    : std_logic                     := '0';
-    signal rx_bitno     : natural range 0 to 8          := 0;
+    signal rx_counter : natural range 0 to freq := freq - 1;
+    signal rx_strobe : std_logic := '0';
+    signal rx_bitno : natural range 0 to 8 := 0;
     
     -- fsm for rx opertation
     TYPE fsm_state IS (IDLE, START, DATA, STOP, FULL);
@@ -46,18 +48,14 @@ begin
 
     rx_fsm : process(clk) is
     begin
-                
         -- handle normal operation
         if rising_edge(clk) then
-            
             If (reset = '1') then
                 state <= IDLE;
                 rx_bitno <= 0;
-                
             else
                 -- handle rx fsm
                 case state is
-                    
                     when IDLE => 
                         If (rx_port = '0') then
                             state <= START;
@@ -89,7 +87,6 @@ begin
                             rx_ready <= '0';
                             state <= IDLE;
                         end if;
-                
                 end case;
             end if;
         end if;
@@ -97,17 +94,14 @@ begin
 
     counters : process(clk) is
     begin
-        -- handle normal operation
         if rising_edge(clk) then
-
             If (reset = '1') then
                 rx_counter <= freq-1;
                 rx_strobe <= '0';
-
             else
                 --handle counter
                 if(state = IDLE and rx_port = '0') then
-                    rx_counter <= freq/2;
+                    rx_counter <= freq / 2;
                 else
                     if (rx_counter = 0) then
                         rx_counter <= freq - 1;
